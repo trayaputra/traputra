@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game Mobile</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Snake Game</h1>
+            <div class="score-board">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="high-score">High Score: <span id="highScore">0</span></div>
+            </div>
+        </div>
+        
+        <canvas id="gameCanvas" width="320" height="320"></canvas>
+        
+        <div class="controls">
+            <button id="startBtn" class="btn btn-primary">Start Game</button>
+            <button id="pauseBtn" class="btn btn-secondary" disabled>Pause</button>
+            <button id="resetBtn" class="btn btn-danger">Reset</button>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="arrow-pad">
+                <button class="arrow up" id="upBtn">▲</button>
+                <div class="arrow-row">
+                    <button class="arrow left" id="leftBtn">◄</button>
+                    <button class="arrow down" id="downBtn">▼</button>
+                    <button class="arrow right" id="rightBtn">►</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info">
+            <p>Use arrow keys or mobile buttons to control the snake</p>
+            <p id="gameStatus"></p>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
