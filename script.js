@@ -223,6 +223,52 @@ function interpolatePositions(progress) {
     };
 }
 
+function drawHead(x, y, dirX, dirY) {
+    const centerX = x * gridSize + gridSize / 2;
+    const centerY = y * gridSize + gridSize / 2;
+    const headRadius = gridSize / 2 - 2;
+    
+    // Draw head body (lebih terang hijau)
+    ctx.fillStyle = '#00ff00';
+    ctx.shadowColor = '#00ff00';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw mata berdasarkan arah
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#ffffff';
+    
+    let eyeOffsetX = 0;
+    let eyeOffsetY = 0;
+    
+    if (dirX === 1) eyeOffsetX = 4;      // Ke kanan
+    else if (dirX === -1) eyeOffsetX = -4; // Ke kiri
+    else if (dirY === 1) eyeOffsetY = 4;   // Ke bawah
+    else if (dirY === -1) eyeOffsetY = -4; // Ke atas
+    
+    // Mata kiri
+    ctx.beginPath();
+    ctx.arc(centerX - 3 + eyeOffsetX, centerY - 3 + eyeOffsetY, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Mata kanan
+    ctx.beginPath();
+    ctx.arc(centerX + 3 + eyeOffsetX, centerY - 3 + eyeOffsetY, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Pupil (hitam kecil di mata)
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(centerX - 3 + eyeOffsetX, centerY - 3 + eyeOffsetY, 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(centerX + 3 + eyeOffsetX, centerY - 3 + eyeOffsetY, 0.8, 0, Math.PI * 2);
+    ctx.fill();
+}
+
 function draw() {
     // Clear canvas
     ctx.fillStyle = '#1a1a1a';
@@ -243,20 +289,18 @@ function draw() {
         ctx.stroke();
     }
     
-    // Draw snake dengan smooth positions
+    // Draw snake body dan head
     snakePositions.forEach((segment, index) => {
         if (index === 0) {
-            // Head
-            ctx.fillStyle = '#00ff00';
-            ctx.shadowColor = '#00ff00';
-            ctx.shadowBlur = 10;
+            // Head dengan mata
+            drawHead(segment.x, segment.y, direction.x, direction.y);
         } else {
             // Body
             ctx.fillStyle = '#00cc00';
             ctx.shadowColor = '#00cc00';
             ctx.shadowBlur = 5;
+            ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
         }
-        ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
     });
     ctx.shadowColor = 'transparent';
     
