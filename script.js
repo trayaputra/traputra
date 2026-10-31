@@ -12,7 +12,7 @@ let score = 0;
 let highScore = localStorage.getItem('snakeHighScore') || 0;
 let gameRunning = false;
 let gamePaused = false;
-let gameSpeed = 100;
+let gameSpeed = 180;
 let lastMoveTime = 0;
 let lastFrameTime = 0;
 
@@ -180,8 +180,8 @@ function update() {
         food = generateFood();
         foodPosition = { ...food };
         
-        // Increase difficulty
-        if (score % 50 === 0 && gameSpeed > 50) {
+        // Increase difficulty (tapi tetap pelan)
+        if (score % 50 === 0 && gameSpeed > 120) {
             gameSpeed -= 5;
         }
     } else {
