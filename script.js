@@ -13,7 +13,12 @@ let highScore = localStorage.getItem('snakeHighScore') || 0;
 let gameRunning = false;
 let gamePaused = false;
 let gameSpeed = 100;
-let gameLoop;
+let lastMoveTime = 0;
+let lastFrameTime = 0;
+
+// Animation variables
+let snakePositions = [{ x: 8, y: 8 }]; // Smooth positions for rendering
+let foodPosition = { x: 12, y: 12 };
 
 // DOM elements
 const scoreDisplay = document.getElementById('score');
@@ -82,7 +87,9 @@ function startGame() {
     startBtn.disabled = true;
     pauseBtn.disabled = false;
     gameStatusDisplay.textContent = 'Game started!';
-    gameLoop = setInterval(update, gameSpeed);
+    lastMoveTime = Date.now();
+    lastFrameTime = Date.now();
+    requestAnimationFrame(gameLoop);
 }
 
 function togglePause() {
@@ -90,23 +97,25 @@ function togglePause() {
     
     gamePaused = !gamePaused;
     if (gamePaused) {
-        clearInterval(gameLoop);
         pauseBtn.textContent = 'Resume';
         gameStatusDisplay.textContent = 'Game paused';
     } else {
         pauseBtn.textContent = 'Pause';
         gameStatusDisplay.textContent = '';
-        gameLoop = setInterval(update, gameSpeed);
+        lastMoveTime = Date.now();
+        lastFrameTime = Date.now();
+        requestAnimationFrame(gameLoop);
     }
 }
 
 function resetGame() {
     gameRunning = false;
     gamePaused = false;
-    clearInterval(gameLoop);
     
     snake = [{ x: 8, y: 8 }];
+    snakePositions = [{ x: 8, y: 8 }];
     food = generateFood();
+    foodPosition = { ...food };
     direction = { x: 1, y: 0 };
     nextDirection = { x: 1, y: 0 };
     score = 0;
@@ -169,24 +178,20 @@ function update() {
         score += 10;
         scoreDisplay.textContent = score;
         food = generateFood();
+        foodPosition = { ...food };
         
         // Increase difficulty
         if (score % 50 === 0 && gameSpeed > 50) {
             gameSpeed -= 5;
-            clearInterval(gameLoop);
-            gameLoop = setInterval(update, gameSpeed);
         }
     } else {
         snake.pop();
     }
-    
-    draw();
 }
 
 function endGame(message) {
     gameRunning = false;
     gamePaused = false;
-    clearInterval(gameLoop);
     
     if (score > highScore) {
         highScore = score;
@@ -202,6 +207,20 @@ function endGame(message) {
     pauseBtn.textContent = 'Pause';
     
     draw();
+}
+
+function interpolatePositions(progress) {
+    // Smooth positions untuk rendering
+    snakePositions = snake.map(segment => ({
+        x: segment.x - direction.x * (1 - progress),
+        y: segment.y - direction.y * (1 - progress)
+    }));
+    
+    // Smooth food position
+    foodPosition = {
+        x: food.x,
+        y: food.y
+    };
 }
 
 function draw() {
@@ -224,8 +243,8 @@ function draw() {
         ctx.stroke();
     }
     
-    // Draw snake
-    snake.forEach((segment, index) => {
+    // Draw snake dengan smooth positions
+    snakePositions.forEach((segment, index) => {
         if (index === 0) {
             // Head
             ctx.fillStyle = '#00ff00';
@@ -246,9 +265,37 @@ function draw() {
     ctx.shadowColor = '#ff4444';
     ctx.shadowBlur = 10;
     ctx.beginPath();
-    ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2 - 2, 0, Math.PI * 2);
+    ctx.arc(foodPosition.x * gridSize + gridSize / 2, foodPosition.y * gridSize + gridSize / 2, gridSize / 2 - 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowColor = 'transparent';
+}
+
+function gameLoop(currentTime) {
+    if (!gameRunning) return;
+    if (gamePaused) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    const deltaTime = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+    
+    const timeSinceLastMove = currentTime - lastMoveTime;
+    const moveProgress = Math.min(timeSinceLastMove / gameSpeed, 1);
+    
+    // Update game logic ketika waktu mencukupi
+    if (timeSinceLastMove >= gameSpeed) {
+        update();
+        lastMoveTime = currentTime;
+    }
+    
+    // Interpolate posisi untuk smooth rendering
+    interpolatePositions(moveProgress);
+    
+    // Draw
+    draw();
+    
+    requestAnimationFrame(gameLoop);
 }
 
 // Initial draw
