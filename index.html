@@ -24,6 +24,20 @@
   .boost-badge{position:fixed;top:42px;left:50%;transform:translateX(-50%);background:rgba(255,120,30,.8);color:#fff;font-size:11px;font-weight:700;padding:3px 11px;border-radius:16px;z-index:20;opacity:0;transition:opacity .25s;pointer-events:none}
   .boost-badge.show{opacity:1}
 
+  /* Minimap */
+  .minimap-container{
+    position:fixed;top:12px;right:12px;
+    width:120px;height:120px;
+    background:rgba(10,22,40,.75);
+    border-radius:12px;
+    border:1.5px solid rgba(126,200,227,.35);
+    overflow:hidden;
+    z-index:20;
+    pointer-events:none;
+    box-shadow:0 4px 16px rgba(0,0,0,.4);
+  }
+  #minimap{display:block;width:100%;height:100%}
+
   /* Dynamic Analog */
   .analog-base{
     position:fixed;
@@ -93,6 +107,10 @@
     </div>
   </div>
 
+  <div class="minimap-container">
+    <canvas id="minimap"></canvas>
+  </div>
+
   <div class="level-badge" id="levelBadge">Lv.1</div>
   <div class="boost-badge" id="boostBadge">BOOST!</div>
 
@@ -118,6 +136,9 @@
 (() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  const minimapCanvas = document.getElementById('minimap');
+  const minimapCtx = minimapCanvas.getContext('2d');
+  
   const scoreEl = document.getElementById('score');
   const highscoreEl = document.getElementById('highscore');
   const overlay = document.getElementById('overlay');
@@ -168,10 +189,10 @@
   let audioCtx=null;
   function ensureAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
   function tone(f,d,t='sine',v=.11){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}
-  function sfxEat(){tone(520,.05);setTimeout(()=>tone(740,.07),45)}
-  function sfxBoost(){tone(380,.07);setTimeout(()=>tone(560,.1),70)}
-  function sfxDie(){tone(150,.25,'sawtooth',.09);setTimeout(()=>tone(100,.3,'sawtooth',.07),120)}
-  function sfxKill(){tone(320,.07);setTimeout(()=>tone(480,.09),60);setTimeout(()=>tone(640,.1),130)}
+  function sfxEat(){ensureAudio();tone(520,.05);setTimeout(()=>tone(740,.07),45)}
+  function sfxBoost(){ensureAudio();tone(380,.07);setTimeout(()=>tone(560,.1),70)}
+  function sfxDie(){ensureAudio();tone(150,.25,'sawtooth',.09);setTimeout(()=>tone(100,.3,'sawtooth',.07),120)}
+  function sfxKill(){ensureAudio();tone(320,.07);setTimeout(()=>tone(480,.09),60);setTimeout(()=>tone(640,.1),130)}
 
   function wrap(v,m){return((v%m)+m)%m}
   function tDist(x1,y1,x2,y2){let dx=Math.abs(x1-x2),dy=Math.abs(y1-y2);if(dx>worldSize/2)dx=worldSize-dx;if(dy>worldSize/2)dy=worldSize-dy;return Math.hypot(dx,dy)}
@@ -179,6 +200,7 @@
   function resize(){
     W=window.innerWidth;H=window.innerHeight;
     canvas.width=W;canvas.height=H;
+    minimapCanvas.width=120;minimapCanvas.height=120;
     cell=Math.min(W,H)/16;
     worldSize=cell*GRID;
   }
@@ -421,6 +443,37 @@
     }
   }
 
+  function drawMinimap(){
+    minimapCtx.fillStyle='rgba(10,22,40,.8)';minimapCtx.fillRect(0,0,120,120);
+    minimapCtx.strokeStyle='rgba(126,200,227,.4)';minimapCtx.lineWidth=1;minimapCtx.strokeRect(0,0,120,120);
+    
+    const player=snakes[0];if(!player||player.dead)return;
+    
+    const scale=120/worldSize;
+    
+    // Food sebagai titik kecil kuning
+    minimapCtx.fillStyle='#fee440';
+    for(const f of foods){
+      const fx=f.x*scale,fy=f.y*scale;
+      minimapCtx.fillRect(fx-1,fy-1,2,2);
+    }
+    
+    // Bots sebagai lingkaran merah
+    minimapCtx.fillStyle='#ff4444';
+    for(let i=1;i<snakes.length;i++){
+      if(snakes[i].dead)continue;
+      const bx=snakes[i].head.x*scale,by=snakes[i].head.y*scale;
+      minimapCtx.beginPath();minimapCtx.arc(bx,by,2.5,0,Math.PI*2);minimapCtx.fill();
+    }
+    
+    // Player sebagai lingkaran biru hijau
+    const px=player.head.x*scale,py=player.head.y*scale;
+    minimapCtx.fillStyle='#7ec8e3';
+    minimapCtx.beginPath();minimapCtx.arc(px,py,3.5,0,Math.PI*2);minimapCtx.fill();
+    minimapCtx.fillStyle='#57c968';
+    minimapCtx.beginPath();minimapCtx.arc(px,py,1.8,0,Math.PI*2);minimapCtx.fill();
+  }
+
   function draw(){
     ctx.fillStyle='#0a1628';ctx.fillRect(0,0,W,H);
     const player=snakes[0];
@@ -475,6 +528,9 @@
     for(let i=1;i<snakes.length;i++)if(!snakes[i].dead)drawSnake(snakes[i],false);
     drawSnake(player,true);
     ctx.restore();
+    
+    // Draw minimap
+    drawMinimap();
   }
 
   function update(dt){
